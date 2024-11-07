@@ -1,11 +1,15 @@
 use crate::sdk::core_uobject_classes::UObject;
 use bitflags::bitflags;
 use std::cmp::Ordering;
+use std::ffi::OsStr;
+use std::os::windows::ffi::OsStrExt;
 use std::ptr::null;
 use std::sync::{Arc, Mutex};
 
 use winapi::um::libloaderapi::GetModuleHandleW;
 use winapi::um::winnt::LPCWSTR;
+
+use super::core_uobject_classes::UClass;
 
 pub unsafe fn init_gobjects() -> Option<*mut TUObjectArray> {
     const MODULE_NAME: LPCWSTR = null();
@@ -30,9 +34,56 @@ pub struct TUObjectArray {
     objects: Vec<Vec<FUObjectItem>>,
 }
 
+#[derive(Debug)]
 pub struct FName {
     pub comparison_index: i32,
     pub number: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FString {
+    data: String,
+}
+
+impl FString {
+    pub fn new() -> Self {
+        FString {
+            data: String::new(),
+        }
+    }
+
+    pub fn from_wide(wide: &[u16]) -> Self {
+        let string_data = String::from_utf16_lossy(wide);
+        FString { data: string_data }
+    }
+
+    pub fn to_string(&self) -> String {
+        self.data.clone()
+    }
+
+    pub fn to_wide_string(&self) -> Vec<u16> {
+        OsStr::new(&self.data).encode_wide().collect::<Vec<u16>>()
+    }
+}
+
+impl From<&str> for FString {
+    fn from(s: &str) -> Self {
+        FString {
+            data: s.to_string(),
+        }
+    }
+}
+
+impl From<String> for FString {
+    fn from(s: String) -> Self {
+        FString { data: s }
+    }
+}
+
+impl From<FString> for String {
+    fn from(fstr: FString) -> Self {
+        fstr.data
+    }
 }
 
 struct FUObjectItem {
@@ -65,6 +116,49 @@ impl TUObjectArray {
             max_chunks: 0,
             num_chunks: 0,
             objects: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct UIpNetDriver {
+    log_port_unreach: bool,
+    allow_player_port_unreach: bool,
+    max_port_count_to_try: u32,
+    server_desired_socket_receive_buffer_bytes: u32,
+    server_desired_socket_send_buffer_bytes: u32,
+    client_desired_socket_receive_buffer_bytes: u32,
+    client_desired_socket_send_buffer_bytes: u32,
+}
+
+impl UIpNetDriver {
+    pub fn new(
+        log_port_unreach: bool,
+        allow_player_port_unreach: bool,
+        max_port_count_to_try: u32,
+        server_desired_socket_receive_buffer_bytes: u32,
+        server_desired_socket_send_buffer_bytes: u32,
+        client_desired_socket_receive_buffer_bytes: u32,
+        client_desired_socket_send_buffer_bytes: u32,
+    ) -> Self {
+        UIpNetDriver {
+            log_port_unreach,
+            allow_player_port_unreach,
+            max_port_count_to_try,
+            server_desired_socket_receive_buffer_bytes,
+            server_desired_socket_send_buffer_bytes,
+            client_desired_socket_receive_buffer_bytes,
+            client_desired_socket_send_buffer_bytes,
+        }
+    }
+
+    pub fn static_class() -> *mut UClass {
+        unsafe {
+            static mut CLSS: *mut UClass = std::ptr::null_mut();
+            if CLSS.is_null() {
+                CLSS = UObject::find_class("IpNetDriver");
+            }
+            CLSS
         }
     }
 }

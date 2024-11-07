@@ -4,9 +4,11 @@ extern crate winapi;
 mod helpers;
 mod sdk;
 
+use helpers::hooks::{self};
 use helpers::utilities::utilities::{change_byte, get_image_base, nop_function};
 use minhook_sys::*;
 use sdk::Basic;
+use std::ffi::c_void;
 use std::io::{stdout, Write};
 use std::thread;
 use std::time::Duration;
@@ -40,11 +42,6 @@ fn main_thread() {
             write!(stdout(), "MinHook Initialized\n").unwrap();
         }
 
-        Basic::init_gobjects();
-        write!(stdout(), "GObjects Initialized\n").unwrap();
-
-        write!(stdout(), "BaseAddress: 0x{:x}\n", get_image_base()).unwrap();
-
         SetConsoleTitleA("Rust GameServer".as_ptr() as *const i8);
 
         if MH_Initialize() != MH_OK {
@@ -52,6 +49,23 @@ fn main_thread() {
         } else {
             write!(stdout(), "MinHook Initialized\n").unwrap();
         }
+
+        Basic::init_gobjects();
+        write!(stdout(), "GObjects Initialized\n").unwrap();
+
+        write!(stdout(), "BaseAddress: 0x{:x}\n", get_image_base()).unwrap();
+
+        let image_base = get_image_base();
+        let tickrate_hook_address = (image_base + 0x29235D0) as *mut c_void;
+
+        let get_max_tick_rate_hook: *mut c_void =
+            hooks::hooks::get_max_tick_rate_hook as *mut c_void;
+
+        MH_CreateHook(
+            tickrate_hook_address,
+            get_max_tick_rate_hook,
+            std::ptr::null_mut(),
+        );
     }
 
     loop {
