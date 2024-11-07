@@ -2,9 +2,11 @@ extern crate minhook_sys;
 extern crate winapi;
 
 mod helpers;
+mod sdk;
 
 use helpers::utilities::utilities::{change_byte, get_image_base, nop_function};
 use minhook_sys::*;
+use sdk::Basic;
 use std::io::{stdout, Write};
 use std::thread;
 use std::time::Duration;
@@ -37,6 +39,11 @@ fn main_thread() {
         } else {
             write!(stdout(), "MinHook Initialized\n").unwrap();
         }
+
+        Basic::init_gobjects();
+        write!(stdout(), "GObjects Initialized\n").unwrap();
+
+        write!(stdout(), "BaseAddress: 0x{:x}\n", get_image_base()).unwrap();
 
         SetConsoleTitleA("Rust GameServer".as_ptr() as *const i8);
 
