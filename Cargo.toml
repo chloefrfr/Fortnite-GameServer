@@ -1,0 +1,12 @@
+[package]
+name = "gameserver"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+winapi = { version = "0.3", features = ["consoleapi", "windowsx", "debugapi", "winuser", "fileapi", "winbase", "memoryapi", "sysinfoapi"] }
+windows = "0.58.0"
+minhook-sys = "0.1.1"
+
+[lib]
+crate-type = ["dylib"]
