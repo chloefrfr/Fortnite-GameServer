@@ -1,36 +1,56 @@
 use std::ffi::c_void;
 use std::ffi::OsStr;
-
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 
 use super::Basic::FName;
 use super::Basic::{EClassCastFlags, TUObjectArray};
 
 pub struct UObject {
-    vtable: Arc<Mutex<*mut c_void>>,
-    flags: EClassCastFlags,
-    index: i32,
-    name: FName,
-    outer: Option<Arc<UObject>>,
+    _vtable: Arc<Mutex<*mut c_void>>,
+    _flags: EClassCastFlags,
+    _index: i32,
+    _name: FName,
+    _outer: Option<Arc<UObject>>,
 }
 
-static mut G_OBJECTS: *mut Mutex<TUObjectArray> = ptr::null_mut();
+static mut _G_OBJECTS: *mut Mutex<TUObjectArray> = ptr::null_mut();
+
+pub struct UClass {
+    pad_67: [u8; 0x30],
+    cast_flags: EClassCastFlags,
+    pad_68: [u8; 0x38],
+    default_object: Weak<UObject>,
+    pad_69: [u8; 0x100],
+}
+
+#[allow(dead_code)]
+impl UClass {
+    pub fn static_class() -> *mut UClass {
+        unsafe {
+            static mut CLSS: *mut UClass = ptr::null_mut();
+            if CLSS.is_null() {
+                CLSS = UObject::find_class("Class");
+            }
+            CLSS
+        }
+    }
+}
 
 impl UObject {
     pub fn new() -> Self {
         UObject {
-            vtable: Arc::new(Mutex::new(std::ptr::null_mut())),
-            flags: EClassCastFlags::NONE,
-            index: 0,
-            name: FName::new(),
-            outer: None,
+            _vtable: Arc::new(Mutex::new(std::ptr::null_mut())),
+            _flags: EClassCastFlags::NONE,
+            _index: 0,
+            _name: FName::new(),
+            _outer: None,
         }
     }
 
     pub fn has_type_flag(&self, type_flag: EClassCastFlags) -> bool {
-        (self.flags.bits() & type_flag.bits()) == type_flag.bits()
+        (self._flags.bits() & type_flag.bits()) == type_flag.bits()
     }
 
     pub fn static_class() -> *mut UClass {
@@ -44,11 +64,10 @@ impl UObject {
     }
 
     pub fn get_name(&self) -> String {
-        self.name.to_string()
+        self._name.to_string()
     }
 
     pub fn get_full_name(&self) -> String {
-        // TODO: Fully implement UClass to do self.get_class().get_name()
         format!("{}.{}", self.get_name(), self.get_name())
     }
 
@@ -64,18 +83,17 @@ impl UObject {
         ) -> *mut UObject = unsafe { std::mem::transmute(0x18B1A40 as *const u8) };
 
         let wide_full_name: Vec<u16> = OsStr::new(full_name).encode_wide().collect();
-        let obj = unsafe {
-            static_find_object(
-                in_class.unwrap_or(ptr::null_mut()),
-                ptr::null_mut(),
-                wide_full_name.as_ptr(),
-                false,
-            )
-        };
+        let obj = static_find_object(
+            in_class.unwrap_or(ptr::null_mut()),
+            ptr::null_mut(),
+            wide_full_name.as_ptr(),
+            false,
+        );
+
         if obj.is_null() {
             None
         } else {
-            Some(unsafe { obj as *mut UEType })
+            Some(obj as *mut UEType)
         }
     }
 
@@ -88,10 +106,10 @@ impl UObject {
         }
 
         let g_objects = unsafe {
-            if let Some(mutex) = G_OBJECTS.as_ref() {
+            if let Some(mutex) = _G_OBJECTS.as_ref() {
                 mutex.lock().unwrap()
             } else {
-                panic!("G_OBJECTS is null!");
+                panic!("_G_OBJECTS is null!");
             }
         };
 
@@ -120,5 +138,3 @@ impl UObject {
             .unwrap_or(ptr::null_mut())
     }
 }
-
-pub struct UClass {}

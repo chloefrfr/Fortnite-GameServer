@@ -7,6 +7,7 @@ mod sdk;
 use helpers::hooks::{self};
 use helpers::utilities::utilities::{change_byte, get_image_base, nop_function};
 use minhook_sys::*;
+use sdk::engine_classes::UNetDriver;
 use sdk::Basic;
 use std::ffi::c_void;
 use std::io::{stdout, Write};
@@ -58,6 +59,8 @@ fn main_thread() {
         let image_base = get_image_base();
         let tickrate_hook_address = (image_base + 0x29235D0) as *mut c_void;
 
+        let tick_flush_hook_address = (image_base + 0x26ACDA0) as *mut c_void;
+
         let get_max_tick_rate_hook: *mut c_void =
             hooks::hooks::get_max_tick_rate_hook as *mut c_void;
 
@@ -65,6 +68,21 @@ fn main_thread() {
             tickrate_hook_address,
             get_max_tick_rate_hook,
             std::ptr::null_mut(),
+        );
+
+        let tick_flush_hook: Option<fn(&mut UNetDriver, i32)> = Some(hooks::hooks::tick_flush_hook);
+
+        let tick_flush_hook_raw: *mut c_void = match tick_flush_hook {
+            Some(func) => std::mem::transmute(func),
+            None => std::ptr::null_mut(),
+        };
+
+        let mut original_func: *mut c_void = std::ptr::null_mut();
+
+        MH_CreateHook(
+            tick_flush_hook_address,
+            tick_flush_hook_raw,
+            &mut original_func,
         );
     }
 

@@ -1,4 +1,7 @@
+use std::sync::{Arc, Once};
+
 use super::{
+    core_uobject_classes::UClass,
     core_uobject_structs::{FGuid, FIntPoint, FSoftObjectPath},
     engine_structs::{
         ETextureCompressionSettings, ETextureFilter, ETextureGroup, FFontImportOptionsData,
@@ -6,11 +9,6 @@ use super::{
     slatecore_structs::FCompositeFont,
     Basic::{FName, FString},
 };
-use crate::sdk::core_uobject_classes::{UClass, UObject};
-use once_cell::sync::Lazy;
-use std::rc::{Rc, Weak};
-use std::sync::{Arc, Once};
-use std::{cell::RefCell, sync::RwLock};
 
 pub struct UAssetUserData;
 
@@ -172,6 +170,88 @@ pub struct UEngine {
     sub_title_font_name: FSoftObjectPath,
     additional_fonts: Vec<UFont>,
     additional_font_names: Vec<FString>,
+}
+
+#[derive(Default)]
+pub struct UProperty {}
+
+#[derive(Default)]
+pub struct UChannel {}
+
+#[derive(Default)]
+pub struct UReplicationDriver {}
+
+#[derive(Default)]
+pub struct UPackage {}
+
+#[derive(Default)]
+pub struct UNetConnection {}
+
+#[derive(Default)]
+pub struct UNetDriver {
+    pub net_connection_class_name: FString,
+    pub replication_driver_class_name: FString,
+    pub max_download_size: i32,
+    pub b_clamp_listen_server_tick_rate: bool,
+    pub bit_pad_33: u8,
+    pub net_server_max_tick_rate: i32,
+    pub max_internet_client_rate: i32,
+    pub max_client_rate: i32,
+    pub server_travel_pause: f32,
+    pub spawn_priority_seconds: f32,
+    pub relevant_timeout: f32,
+    pub keep_alive_time: f32,
+    pub initial_connect_timeout: f32,
+    pub connection_timeout: f32,
+    pub timeout_multiplier_for_unoptimized_builds: f32,
+    pub b_no_timeouts: bool,
+    pub server_connection: Option<Box<UNetConnection>>,
+    pub client_connections: Vec<Box<UNetConnection>>,
+    pub world: Option<Box<UWorld>>,
+    pub world_package: Option<Box<UPackage>>,
+    pub net_connection_class: Option<Box<UClass>>,
+    pub replication_driver_class: Option<Box<UClass>>,
+    pub role_property: Option<Box<UProperty>>,
+    pub remote_role_property: Option<Box<UProperty>>,
+    pub net_driver_name: FString,
+    pub actor_channel_pool: Vec<Box<UChannel>>,
+    pub time: f32,
+    pub replication_driver: Option<Box<UReplicationDriver>>,
+}
+
+impl UNetDriver {
+    pub fn new() -> Self {
+        UNetDriver {
+            net_connection_class_name: FString::default(),
+            replication_driver_class_name: FString::default(),
+            max_download_size: 0,
+            b_clamp_listen_server_tick_rate: false,
+            bit_pad_33: 0,
+            net_server_max_tick_rate: 0,
+            max_internet_client_rate: 0,
+            max_client_rate: 0,
+            server_travel_pause: 0.0,
+            spawn_priority_seconds: 0.0,
+            relevant_timeout: 0.0,
+            keep_alive_time: 0.0,
+            initial_connect_timeout: 0.0,
+            connection_timeout: 0.0,
+            timeout_multiplier_for_unoptimized_builds: 0.0,
+            b_no_timeouts: false,
+            server_connection: None,
+            client_connections: Vec::new(),
+            world: None,
+            world_package: None,
+            net_connection_class: None,
+            replication_driver_class: None,
+            role_property: None,
+            remote_role_property: None,
+            net_driver_name: FString::default(),
+            actor_channel_pool: Vec::new(),
+            time: 0.0,
+            replication_driver: None,
+        }
+    }
 }
 
 pub struct UWorld {}

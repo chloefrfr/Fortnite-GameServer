@@ -40,7 +40,7 @@ pub struct FName {
     pub number: i32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FString {
     data: String,
 }
